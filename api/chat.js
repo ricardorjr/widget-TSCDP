@@ -1,40 +1,29 @@
-// api/chat.js — Endpoint do chat com RAG usando Gemini
+// api/chat.js — Chat com RAG usando artigos enviados pelo widget
 // POST /api/chat
-// Body: { message: string, pageTitle?: string, pageUrl?: string }
+// Body: { message, articles?, pageTitle?, pageUrl? }
 
-import { fetchArticles, articlesToContext } from '../lib/rss.js';
 import { model, SYSTEM_PROMPT } from '../lib/gemini.js';
-
-// Cache de artigos (TTL: 30 min)
-let articlesCache = null;
-let cacheTime = 0;
-const CACHE_TTL = 30 * 60 * 1000;
-
-async function getArticlesCached() {
-  const now = Date.now();
-  if (articlesCache && (now - cacheTime) < CACHE_TTL) return articlesCache;
-  articlesCache = await fetchArticles(12);
-  cacheTime = now;
-  return articlesCache;
-}
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
 
-  const { message, pageTitle, pageUrl } = req.body || {};
+  const { message, articles, pageTitle, pageUrl } = req.body || {};
 
   if (!message || typeof message !== 'string' || message.trim().length === 0) {
     return res.status(400).json({ error: 'Mensagem inválida' });
   }
-
   if (message.length > 500) {
     return res.status(400).json({ error: 'Mensagem muito longa (máx. 500 caracteres)' });
   }
 
   try {
-    const articles = await getArticlesCached();
-    const context = articlesToContext(articles);
+    // Contexto dos artigos (enviados pelo widget)
+    const context = articles?.length
+      ? articles.slice(0, 10).map((a, i) =>
+          `[Artigo ${i + 1}]\nTítulo: ${a.title}\nURL: ${a.link}\nData: ${a.date}\nResumo: ${a.summary}\n---`
+        ).join('\n\n')
+      : 'Nenhum artigo disponível no momento.';
 
     const pageContext = pageTitle
       ? `\nO usuário está lendo: "${pageTitle}"${pageUrl ? ` (${pageUrl})` : ''}`
@@ -51,29 +40,17 @@ ${message.trim()}`;
     const result = await model.generateContent(prompt);
     const reply = result.response.text() || 'Desculpe, não consegui processar sua pergunta.';
 
-    const relatedArticles = articles.slice(0, 3).map(a => ({
-      title: a.title,
-      link: a.link,
-      summary: a.summary.slice(0, 120) + '...',
-      date: a.pubDate,
-    }));
-
-    return res.status(200).json({ reply, relatedArticles });
+    return res.status(200).json({ reply });
 
   } catch (err) {
     console.error('[chat] Erro:', err.message);
 
     if (err.message?.includes('API_KEY') || err.status === 401) {
-      return res.status(500).json({ error: 'Chave do Gemini inválida.', reply: 'Erro de configuração. Contate o administrador.' });
+      return res.status(500).json({ reply: 'Erro de configuração. Contate o administrador.' });
     }
-
     if (err.status === 429 || err.message?.includes('quota')) {
-      return res.status(429).json({ error: 'Rate limit atingido.', reply: 'Muitas perguntas em pouco tempo. Tente em alguns segundos! 🔄' });
+      return res.status(429).json({ reply: 'Muitas perguntas em pouco tempo. Tente em alguns segundos! 🔄' });
     }
-
-    return res.status(500).json({
-      error: 'Erro interno.',
-      reply: 'Estou com uma instabilidade momentânea. Tente novamente em instantes! 🔄'
-    });
+    return res.status(500).json({ reply: 'Estou com uma instabilidade momentânea. Tente novamente em instantes! 🔄' });
   }
 }

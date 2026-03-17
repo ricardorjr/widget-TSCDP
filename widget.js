@@ -335,32 +335,62 @@
   });
 
   // ─── BRIEFING ─────────────────────────────────────────────────────────────
+  // 1. Busca artigos direto do WordPress (mesmo domínio, sem bloqueio)
+  // 2. Envia para o Vercel apenas para processamento com IA
   async function loadBriefing() {
     isLoadingBriefing = true;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/briefing`);
-      const data = await res.json();
-      briefingData = data;
+      // Passo 1: busca artigos via WP REST API (cliente → WordPress, sem CORS)
+      const wpRes = await fetch('/wp-json/wp/v2/posts?per_page=5&_embed=true', {
+        headers: { 'Accept': 'application/json' }
+      });
 
-      // Atualiza label de semana
+      if (!wpRes.ok) throw new Error('WP API falhou: ' + wpRes.status);
+      const posts = await wpRes.json();
+
+      const articles = posts.map(p => ({
+        title: decodeEntities(p.title?.rendered || ''),
+        link: p.link || '',
+        date: p.date || '',
+        summary: stripTags(p.excerpt?.rendered || '').slice(0, 300),
+        categories: p._embedded?.['wp:term']?.[0]?.map(t => t.name) || [],
+      }));
+
+      // Passo 2: envia artigos para o Vercel gerar o resumo com IA
+      const briefingRes = await fetch(`${API_BASE_URL}/api/briefing`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ articles })
+      });
+
+      const aiData = await briefingRes.json();
+
+      briefingData = { articles, aiSummary: aiData.aiSummary, weekLabel: aiData.weekLabel };
+
       const weekEl = document.getElementById('cdpw-week-label');
-      if (weekEl) weekEl.textContent = data.weekLabel || '';
+      if (weekEl) weekEl.textContent = briefingData.weekLabel || '';
 
-      // Renderiza artigos
-      renderArticles(data.articles || [], 'cdpw-articles');
-      renderArticles(data.articles || [], 'cdpw-related-articles');
+      renderArticles(articles, 'cdpw-articles');
+      renderArticles(articles, 'cdpw-related-articles');
 
-      // Remove badge após carregar
       const badge = document.getElementById('cdpw-badge');
       if (badge) badge.style.display = 'none';
 
     } catch (err) {
-      console.error('[CDP Widget] Erro ao carregar briefing:', err);
+      console.error('[CDP Widget] Erro:', err);
       document.getElementById('cdpw-articles').innerHTML =
         '<div style="padding:16px;font-size:12px;color:#6b7280;text-align:center">Não foi possível carregar os artigos.<br>Visite o portal diretamente.</div>';
     } finally {
       isLoadingBriefing = false;
     }
+  }
+
+  function stripTags(html) {
+    return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  function decodeEntities(str) {
+    return str.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&#8230;/g,'...').replace(/&#8216;|&#8217;/g,"'").replace(/&#8220;|&#8221;/g,'"');
   }
 
   function renderArticles(articles, containerId) {
@@ -501,6 +531,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: text,
+          articles: briefingData?.articles || [],
           pageTitle: document.title || '',
           pageUrl: window.location.href || '',
         })
