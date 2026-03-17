@@ -16,7 +16,7 @@
   'use strict';
 
   // ─── CONFIGURAÇÃO ──────────────────────────────────────────────────────────
-  const API_BASE_URL = 'https://cdp-widget-backend.vercel.app'; // ← altere após deploy
+  const API_BASE_URL = 'https://widget-tscdp.vercel.app'; // URL do deploy no Vercel
   const PORTAL_NAME = 'Tudo Sobre CDP';
   const ACCENT_COLOR = '#2563eb';
   const DARK_COLOR = '#1e3a5f';
@@ -387,12 +387,13 @@
     } catch { return ''; }
   }
 
-  // ─── ÁUDIO ────────────────────────────────────────────────────────────────
-  playBtn.addEventListener('click', async () => {
+  // ─── ÁUDIO (Web Speech API — 100% gratuito, nativo do browser) ───────────
+  playBtn.addEventListener('click', () => {
     if (!briefingData?.aiSummary) return;
 
-    if (isPlaying && audioEl) {
-      audioEl.pause();
+    // Pausa se já está tocando
+    if (isPlaying) {
+      speechSynthesis.cancel();
       isPlaying = false;
       waveform.classList.remove('cdpw-playing');
       iconPlay.style.display = 'block';
@@ -401,38 +402,47 @@
       return;
     }
 
-    // Carrega áudio se ainda não tem
-    if (!audioBlob) {
-      audioSub.textContent = 'Gerando áudio...';
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/audio`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: briefingData.aiSummary })
-        });
-        if (!res.ok) throw new Error('TTS falhou');
-        audioBlob = URL.createObjectURL(await res.blob());
-      } catch (err) {
-        audioSub.textContent = 'Erro ao gerar áudio';
-        return;
-      }
+    // Verifica suporte
+    if (!('speechSynthesis' in window)) {
+      audioSub.textContent = 'Áudio não suportado neste browser';
+      return;
     }
 
-    audioEl = new Audio(audioBlob);
-    audioEl.play();
-    isPlaying = true;
-    waveform.classList.add('cdpw-playing');
-    iconPlay.style.display = 'none';
-    iconPause.style.display = 'block';
-    audioSub.textContent = 'Reproduzindo...';
+    const utterance = new SpeechSynthesisUtterance(briefingData.aiSummary);
+    utterance.lang = 'pt-BR';
+    utterance.rate = 0.92;
+    utterance.pitch = 1.0;
 
-    audioEl.onended = () => {
+    // Seleciona voz em português se disponível
+    const voices = speechSynthesis.getVoices();
+    const ptVoice = voices.find(v => v.lang.startsWith('pt'));
+    if (ptVoice) utterance.voice = ptVoice;
+
+    utterance.onstart = () => {
+      isPlaying = true;
+      waveform.classList.add('cdpw-playing');
+      iconPlay.style.display = 'none';
+      iconPause.style.display = 'block';
+      audioSub.textContent = 'Reproduzindo...';
+    };
+
+    utterance.onend = () => {
       isPlaying = false;
       waveform.classList.remove('cdpw-playing');
       iconPlay.style.display = 'block';
       iconPause.style.display = 'none';
       audioSub.textContent = '~1 min · gerado por IA';
     };
+
+    utterance.onerror = () => {
+      isPlaying = false;
+      waveform.classList.remove('cdpw-playing');
+      iconPlay.style.display = 'block';
+      iconPause.style.display = 'none';
+      audioSub.textContent = 'Erro ao reproduzir áudio';
+    };
+
+    speechSynthesis.speak(utterance);
   });
 
   // ─── CHAT ─────────────────────────────────────────────────────────────────
