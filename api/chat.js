@@ -2,7 +2,7 @@
 // POST /api/chat
 // Body: { message, articles?, pageTitle?, pageUrl? }
 
-import { model, SYSTEM_PROMPT } from '../lib/gemini.js';
+import { getModel, SYSTEM_PROMPT } from '../lib/gemini.js';
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -37,7 +37,7 @@ ${context}
 --- PERGUNTA DO USUÁRIO ---
 ${message.trim()}`;
 
-    const result = await model.generateContent(prompt);
+    const result = await getModel().generateContent(prompt);
     const reply = result.response.text() || 'Desculpe, não consegui processar sua pergunta.';
 
     return res.status(200).json({ reply });

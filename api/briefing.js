@@ -2,7 +2,7 @@
 // POST /api/briefing
 // Body: { articles: Array<{title, link, summary, date}> }
 
-import { model, SYSTEM_PROMPT } from '../lib/gemini.js';
+import { getModel, SYSTEM_PROMPT } from '../lib/gemini.js';
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -34,7 +34,7 @@ Regras:
 Artigos desta semana:
 ${articleList}`;
 
-    const result = await model.generateContent(prompt);
+    const result = await getModel().generateContent(prompt);
     const aiSummary = result.response.text() || '';
 
     return res.status(200).json({ aiSummary, weekLabel: getWeekLabel() });
