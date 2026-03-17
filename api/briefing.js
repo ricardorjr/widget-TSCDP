@@ -84,8 +84,38 @@ Regras:
     return res.status(200).json(result);
 
   } catch (err) {
-    console.error('[briefing] Erro:', err.message);
-    return res.status(500).json({ error: 'Erro ao gerar briefing.' });
+    console.error('[briefing] Erro:', err.message, err.stack);
+
+    // Diagnóstico detalhado por tipo de erro
+    if (err.message?.includes('OPENAI_API_KEY') || err.status === 401) {
+      return res.status(500).json({
+        error: 'Chave da OpenAI inválida ou ausente.',
+        hint: 'Verifique a variável OPENAI_API_KEY nas configurações do Vercel e faça um redeploy.',
+        step: 'env_vars'
+      });
+    }
+
+    if (err.message?.includes('fetch') || err.message?.includes('ENOTFOUND') || err.message?.includes('RSS')) {
+      return res.status(500).json({
+        error: 'Não foi possível acessar o RSS do portal.',
+        hint: 'Verifique se https://www.tudosobrecdp.com.br/feed está acessível.',
+        step: 'rss'
+      });
+    }
+
+    if (err.status === 429) {
+      return res.status(429).json({
+        error: 'Limite de requisições da OpenAI atingido.',
+        hint: 'Aguarde alguns segundos e tente novamente.',
+        step: 'rate_limit'
+      });
+    }
+
+    return res.status(500).json({
+      error: 'Erro interno ao gerar briefing.',
+      detail: err.message || 'Erro desconhecido',
+      step: 'unknown'
+    });
   }
 }
 
