@@ -23,8 +23,12 @@
   const DARK_COLOR    = '#1e3a5f';
 
   // ─── DETECÇÃO DE PÁGINA ────────────────────────────────────────────────────
+  // single-post  = artigo individual  → "Este artigo"
+  // home/archive = home, categoria    → "Flash Briefing"
   const isSinglePost = document.body.classList.contains('single-post') ||
-                       document.body.classList.contains('single');
+                       document.body.classList.contains('single') ||
+                       document.body.classList.contains('postid') ||
+                       /^\/[^/]+\/[^/]+\/[^/]+\/$/.test(window.location.pathname); // /cat/subcat/slug/
 
   // ─── ESTADO ────────────────────────────────────────────────────────────────
   let isOpen            = false;
@@ -39,67 +43,107 @@
   // ─── ESTILOS ───────────────────────────────────────────────────────────────
   const style = document.createElement('style');
   style.textContent = `
-    #cdpw-root * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    /* Reset blindado contra o tema WordPress */
+    #cdpw-root, #cdpw-root * {
+      box-sizing: border-box !important;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+      line-height: normal !important;
+      text-transform: none !important;
+      letter-spacing: normal !important;
+      word-spacing: normal !important;
+      text-shadow: none !important;
+      -webkit-font-smoothing: antialiased !important;
+    }
+    #cdpw-root { display: block !important; position: relative !important; }
 
     /* Botão flutuante */
     #cdpw-btn {
-      position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px;
-      background: linear-gradient(135deg, ${DARK_COLOR}, ${ACCENT_COLOR});
-      border-radius: 50%; cursor: pointer; border: none; outline: none;
-      box-shadow: 0 4px 20px rgba(37,99,235,.4); z-index: 999999;
-      display: flex; align-items: center; justify-content: center;
-      transition: transform .2s, box-shadow .2s;
+      position: fixed !important; bottom: 24px !important; right: 24px !important;
+      width: 56px !important; height: 56px !important;
+      background: linear-gradient(135deg, ${DARK_COLOR}, ${ACCENT_COLOR}) !important;
+      border-radius: 50% !important; cursor: pointer !important; border: none !important;
+      outline: none !important; box-shadow: 0 4px 20px rgba(37,99,235,.4) !important;
+      z-index: 999999 !important; display: flex !important;
+      align-items: center !important; justify-content: center !important;
+      transition: transform .2s, box-shadow .2s !important;
+      padding: 0 !important; margin: 0 !important; opacity: 1 !important;
+      visibility: visible !important;
     }
-    #cdpw-btn:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(37,99,235,.5); }
-    #cdpw-btn svg { width: 22px; height: 22px; }
+    #cdpw-btn:hover { transform: scale(1.08) !important; }
+    #cdpw-btn svg { width: 22px !important; height: 22px !important; display: block !important; }
     #cdpw-badge {
-      position: absolute; top: -2px; right: -2px; width: 16px; height: 16px;
-      background: #ef4444; border-radius: 50%; border: 2px solid #fff;
-      font-size: 8px; font-weight: 700; color: #fff;
-      display: flex; align-items: center; justify-content: center;
+      position: absolute !important; top: -2px !important; right: -2px !important;
+      width: 16px !important; height: 16px !important;
+      background: #ef4444 !important; border-radius: 50% !important;
+      border: 2px solid #fff !important; font-size: 8px !important;
+      font-weight: 700 !important; color: #fff !important;
+      display: flex !important; align-items: center !important; justify-content: center !important;
     }
 
     /* Painel principal */
     #cdpw-panel {
-      position: fixed; bottom: 90px; right: 24px; width: 360px; max-height: 580px;
-      background: #fff; border-radius: 18px;
-      box-shadow: 0 12px 60px rgba(0,0,0,.16);
-      display: flex; flex-direction: column; z-index: 999998; overflow: hidden;
-      transform: scale(.92) translateY(14px); opacity: 0; pointer-events: none;
-      transition: transform .25s cubic-bezier(.34,1.56,.64,1), opacity .2s;
-      transform-origin: bottom right;
+      position: fixed !important; bottom: 90px !important; right: 24px !important;
+      width: 360px !important; max-height: 580px !important;
+      background: #ffffff !important; border-radius: 18px !important;
+      box-shadow: 0 12px 60px rgba(0,0,0,.18) !important;
+      display: flex !important; flex-direction: column !important;
+      z-index: 999998 !important; overflow: hidden !important;
+      transform: scale(.92) translateY(14px) !important; opacity: 0 !important;
+      pointer-events: none !important;
+      transition: transform .25s cubic-bezier(.34,1.56,.64,1), opacity .2s !important;
+      transform-origin: bottom right !important;
+      margin: 0 !important; padding: 0 !important;
     }
-    #cdpw-panel.cdpw-open { transform: scale(1) translateY(0); opacity: 1; pointer-events: all; }
+    #cdpw-panel.cdpw-open {
+      transform: scale(1) translateY(0) !important;
+      opacity: 1 !important;
+      pointer-events: all !important;
+    }
 
     /* Header */
     .cdpw-header {
-      background: linear-gradient(135deg, ${DARK_COLOR}, ${ACCENT_COLOR});
-      padding: 13px 16px; display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+      background: linear-gradient(135deg, ${DARK_COLOR}, ${ACCENT_COLOR}) !important;
+      padding: 13px 16px !important; display: flex !important;
+      align-items: center !important; gap: 10px !important; flex-shrink: 0 !important;
     }
     .cdpw-avatar {
-      width: 36px; height: 36px; background: rgba(255,255,255,.18);
-      border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      width: 36px !important; height: 36px !important;
+      background: rgba(255,255,255,.18) !important; border-radius: 50% !important;
+      display: flex !important; align-items: center !important;
+      justify-content: center !important; flex-shrink: 0 !important;
     }
-    .cdpw-hname { font-size: 14px; font-weight: 800; color: #fff; letter-spacing: -.2px; }
-    .cdpw-hsub { font-size: 10.5px; color: rgba(255,255,255,.7); display: flex; align-items: center; gap: 5px; margin-top: 1px; }
-    .cdpw-dot { width: 6px; height: 6px; background: #4ade80; border-radius: 50%; animation: cdpw-blink 2s infinite; flex-shrink: 0; }
+    .cdpw-hname { font-size: 14px !important; font-weight: 800 !important; color: #fff !important; }
+    .cdpw-hsub {
+      font-size: 10.5px !important; color: rgba(255,255,255,.75) !important;
+      display: flex !important; align-items: center !important; gap: 5px !important; margin-top: 2px !important;
+    }
+    .cdpw-dot {
+      width: 6px !important; height: 6px !important; background: #4ade80 !important;
+      border-radius: 50% !important; animation: cdpw-blink 2s infinite !important; flex-shrink: 0 !important;
+    }
     @keyframes cdpw-blink { 0%,100%{opacity:1} 50%{opacity:.35} }
     .cdpw-close {
-      margin-left: auto; background: rgba(255,255,255,.15); border: none;
-      border-radius: 7px; width: 28px; height: 28px; color: #fff; font-size: 14px;
-      cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      margin-left: auto !important; background: rgba(255,255,255,.15) !important;
+      border: none !important; border-radius: 7px !important;
+      width: 28px !important; height: 28px !important;
+      color: #fff !important; font-size: 14px !important; cursor: pointer !important;
+      display: flex !important; align-items: center !important; justify-content: center !important;
     }
-    .cdpw-close:hover { background: rgba(255,255,255,.28); }
+    .cdpw-close:hover { background: rgba(255,255,255,.28) !important; }
 
     /* Tabs */
-    .cdpw-tabs { display: flex; border-bottom: 2px solid #f1f5f9; background: #fff; flex-shrink: 0; }
-    .cdpw-tab {
-      flex: 1; padding: 11px 6px; font-size: 12px; font-weight: 600; color: #9ca3af;
-      border: none; background: none; cursor: pointer; letter-spacing: -.1px;
-      border-bottom: 2px solid transparent; margin-bottom: -2px;
-      transition: color .15s, border-color .15s;
+    .cdpw-tabs {
+      display: flex !important; border-bottom: 2px solid #f1f5f9 !important;
+      background: #ffffff !important; flex-shrink: 0 !important;
     }
-    .cdpw-tab.cdpw-active { color: ${ACCENT_COLOR}; border-bottom-color: ${ACCENT_COLOR}; }
+    .cdpw-tab {
+      flex: 1 !important; padding: 11px 6px !important; font-size: 12px !important;
+      font-weight: 600 !important; color: #9ca3af !important;
+      border: none !important; background: none !important; cursor: pointer !important;
+      border-bottom: 2px solid transparent !important; margin-bottom: -2px !important;
+      transition: color .15s, border-color .15s !important;
+    }
+    .cdpw-tab.cdpw-active { color: ${ACCENT_COLOR} !important; border-bottom-color: ${ACCENT_COLOR} !important; }
 
     /* Panes */
     .cdpw-body { flex: 1; overflow: hidden; min-height: 0; }
@@ -146,10 +190,10 @@
     .cdpw-nav-btn:disabled { opacity: .35; pointer-events: none; }
 
     /* Cards de artigo */
-    .cdpw-articles { padding: 4px 14px 18px; display: flex; flex-direction: column; gap: 12px; }
+    .cdpw-articles { padding: 4px 12px 14px; display: flex; flex-direction: column; gap: 8px; }
     .cdpw-card {
-      background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
-      padding: 16px 18px 16px 19px; cursor: pointer; text-decoration: none; display: block;
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
+      padding: 11px 13px 11px 14px; cursor: pointer; text-decoration: none; display: block;
       transition: border-color .2s, box-shadow .2s, transform .18s;
       border-left: 4px solid ${ACCENT_COLOR};
     }
@@ -161,23 +205,24 @@
     .cdpw-card[data-cat="entrevista"] { border-left-color: #db2777; }
     .cdpw-card-tag {
       display: inline-block; font-size: 9px; font-weight: 800; letter-spacing: .6px;
-      text-transform: uppercase; padding: 3px 9px; border-radius: 20px; margin-bottom: 9px;
+      text-transform: uppercase; padding: 2px 7px; border-radius: 20px; margin-bottom: 6px;
       background: #eff6ff; color: ${ACCENT_COLOR};
     }
     .cdpw-card[data-cat="destaque"]   .cdpw-card-tag { background: #fff7ed; color: #c2410c; }
     .cdpw-card[data-cat="ia"]         .cdpw-card-tag { background: #f5f3ff; color: #6d28d9; }
     .cdpw-card[data-cat="guia"]       .cdpw-card-tag { background: #f0fdfa; color: #0f766e; }
     .cdpw-card[data-cat="entrevista"] .cdpw-card-tag { background: #fdf2f8; color: #be185d; }
-    .cdpw-card-title   { font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.45; margin-bottom: 8px; }
-    .cdpw-card-summary { font-size: 12px; color: #64748b; line-height: 1.6; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .cdpw-card-title   { font-size: 12.5px !important; font-weight: 700 !important; color: #0f172a !important; line-height: 1.4 !important; margin-bottom: 5px !important; }
+    .cdpw-card-summary { font-size: 11.5px !important; color: #64748b !important; line-height: 1.5 !important; overflow: hidden !important; display: -webkit-box !important; -webkit-line-clamp: 2 !important; -webkit-box-orient: vertical !important; }
     .cdpw-card-meta {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-top: 12px; padding-top: 10px; border-top: 1px solid #f1f5f9;
-      font-size: 10.5px; color: #94a3b8;
+      display: flex !important; justify-content: space-between !important; align-items: center !important;
+      margin-top: 8px !important; padding-top: 7px !important; border-top: 1px solid #f1f5f9 !important;
+      font-size: 10px !important; color: #94a3b8 !important;
     }
     .cdpw-card-read {
-      font-size: 10.5px; font-weight: 700; color: ${ACCENT_COLOR};
-      background: #eff6ff; padding: 2px 9px; border-radius: 20px;
+      font-size: 10.5px !important; font-weight: 700 !important; color: ${ACCENT_COLOR} !important;
+      background: #eff6ff !important; padding: 2px 9px !important; border-radius: 20px !important;
+      text-decoration: none !important;
     }
     .cdpw-skeleton {
       background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
@@ -192,11 +237,11 @@
     .cdpw-msg { display: flex; gap: 7px; align-items: flex-end; }
     .cdpw-msg.cdpw-user { flex-direction: row-reverse; }
     .cdpw-bubble {
-      max-width: 82%; padding: 9px 13px; border-radius: 14px;
-      font-size: 13px; line-height: 1.55;
+      max-width: 82% !important; padding: 9px 13px !important; border-radius: 14px !important;
+      font-size: 13px !important; line-height: 1.55 !important;
     }
-    .cdpw-msg.cdpw-bot  .cdpw-bubble { background: #f1f5f9; color: #0f172a; border-bottom-left-radius: 3px; }
-    .cdpw-msg.cdpw-user .cdpw-bubble { background: linear-gradient(135deg, ${DARK_COLOR}, ${ACCENT_COLOR}); color: #fff; border-bottom-right-radius: 3px; }
+    .cdpw-msg.cdpw-bot  .cdpw-bubble { background: #f1f5f9 !important; color: #0f172a !important; border-bottom-left-radius: 3px !important; }
+    .cdpw-msg.cdpw-user .cdpw-bubble { background: linear-gradient(135deg, ${DARK_COLOR}, ${ACCENT_COLOR}) !important; color: #fff !important; border-bottom-right-radius: 3px !important; }
     .cdpw-bavatar {
       width: 26px; height: 26px; min-width: 26px;
       background: linear-gradient(135deg, ${DARK_COLOR}, ${ACCENT_COLOR});
@@ -346,7 +391,7 @@
         </div>
 
         <!-- BRIEFING -->
-        <div class="cdpw-pane" id="cdpw-pane-briefing">
+        <div class="cdpw-pane cdpw-active" id="cdpw-pane-briefing">
           <div class="cdpw-fb-header">
             <span class="cdpw-fb-title">Esta semana em CDP</span>
             <span class="cdpw-fb-date" id="cdpw-week-label">Carregando...</span>
@@ -497,16 +542,49 @@
     const chipsEl   = document.getElementById('cdpw-art-chips');
 
     try {
-      // Extrai texto do artigo do DOM
-      const contentEl = document.querySelector('.entry-content, .post-content, .article-content, article');
-      const articleText = contentEl
-        ? contentEl.innerText.replace(/\s+/g, ' ').trim().slice(0, 3000)
-        : '';
+      const title = document.querySelector('h1.entry-title, h1.post-title, h1.jeg_post_title, h1.tdb-title-text, h1')
+        ?.textContent.trim() || document.title;
 
-      const title = document.querySelector('h1.entry-title, h1.post-title, h1')?.textContent.trim() || document.title;
+      // Passo 1: tenta extrair do DOM
+      const CONTENT_SELECTORS = [
+        '.entry-content', '.post-content', '.article-content', '.post-body',
+        '.single-content', '[itemprop="articleBody"]', '.wp-block-post-content',
+        '.td-post-content', '.jeg_inner_content', '.tdb-block-inner',
+        '[class*="entry-content"]', '[class*="post-content"]', '[class*="article-body"]',
+        'article .content', 'main article', 'article', 'main',
+      ];
+      let articleText = '';
+      for (const sel of CONTENT_SELECTORS) {
+        const el = document.querySelector(sel);
+        if (el && el.innerText.trim().length > 200) {
+          articleText = el.innerText.replace(/\s+/g, ' ').trim().slice(0, 3000);
+          break;
+        }
+      }
+
+      // Passo 2: fallback via WP REST API (usa o slug da URL atual)
+      if (!articleText) {
+        const slug = window.location.pathname.replace(/\/$/, '').split('/').filter(Boolean).pop();
+        if (slug) {
+          // Tenta posts e pages
+          for (const endpoint of ['posts', 'pages']) {
+            try {
+              const wpRes = await fetch(`/wp-json/wp/v2/${endpoint}?slug=${slug}&_fields=content,excerpt,title`, {
+                headers: { 'Accept': 'application/json' }
+              });
+              const items = await wpRes.json();
+              if (Array.isArray(items) && items.length > 0) {
+                const raw = items[0].content?.rendered || items[0].excerpt?.rendered || '';
+                articleText = stripTags(raw).replace(/\s+/g, ' ').trim().slice(0, 3000);
+                if (articleText.length > 100) break;
+              }
+            } catch { /* tenta proximo */ }
+          }
+        }
+      }
 
       if (!articleText) {
-        summaryEl.textContent = 'Nao foi possivel ler o conteudo desta pagina.';
+        summaryEl.textContent = 'Nao foi possivel ler o conteudo desta pagina. Use o chat para perguntar sobre CDP.';
         return;
       }
 
