@@ -146,11 +146,11 @@
     .cdpw-tab.cdpw-active { color: ${ACCENT_COLOR} !important; border-bottom-color: ${ACCENT_COLOR} !important; }
 
     /* Panes */
-    .cdpw-body { flex: 1; overflow: hidden; min-height: 0; }
-    .cdpw-pane { display: none; height: 100%; flex-direction: column; overflow-y: auto; }
-    .cdpw-pane.cdpw-active { display: flex; }
-    .cdpw-pane::-webkit-scrollbar { width: 4px; }
-    .cdpw-pane::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+    .cdpw-body { flex: 1 !important; overflow: hidden !important; min-height: 0 !important; }
+    .cdpw-pane { display: none !important; height: 100% !important; flex-direction: column !important; overflow-y: auto !important; overflow-x: hidden !important; }
+    .cdpw-pane.cdpw-active { display: flex !important; }
+    .cdpw-pane::-webkit-scrollbar { width: 4px !important; }
+    .cdpw-pane::-webkit-scrollbar-thumb { background: #e2e8f0 !important; border-radius: 4px !important; }
 
     /* Flash Briefing */
     .cdpw-fb-header {
@@ -296,22 +296,15 @@
     .cdpw-rel-sub { font-size: 11px; color: #64748b; margin-top: 3px; }
 
     /* Artigo atual */
-    .cdpw-art-header { padding: 16px 16px 10px; border-bottom: 1px solid #f1f5f9; }
-    .cdpw-art-label { font-size: 9px; font-weight: 800; letter-spacing: .7px; text-transform: uppercase; color: ${ACCENT_COLOR}; margin-bottom: 6px; }
-    .cdpw-art-title { font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.4; }
-    .cdpw-art-body { flex: 1; overflow-y: auto; padding: 14px 16px 16px; }
-    .cdpw-art-body::-webkit-scrollbar { width: 4px; }
-    .cdpw-art-body::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+    .cdpw-art-title { font-size: 13px !important; font-weight: 700 !important; color: #0f172a !important; line-height: 1.4 !important; }
+    .cdpw-art-body { padding: 0 14px 14px !important; }
     .cdpw-art-summary {
-      font-size: 13px; color: #374151; line-height: 1.65;
-      background: #f8fafc; border-radius: 12px; padding: 14px 16px;
-      border-left: 3px solid ${ACCENT_COLOR};
+      font-size: 12px !important; color: #374151 !important; line-height: 1.6 !important;
+      background: #f8fafc !important; border-radius: 10px !important; padding: 12px 14px !important;
+      border-left: 3px solid ${ACCENT_COLOR} !important; margin-bottom: 12px !important;
     }
-    .cdpw-art-ask {
-      margin-top: 14px; padding-top: 14px; border-top: 1px solid #f1f5f9;
-    }
-    .cdpw-art-ask-label { font-size: 10.5px; font-weight: 700; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .4px; }
-    .cdpw-art-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+    .cdpw-art-ask { padding-top: 2px !important; }
+    .cdpw-art-chips { display: flex !important; flex-wrap: wrap !important; gap: 7px !important; }
 
     /* Waveform */
     .cdpw-waveform { display: flex; align-items: center; gap: 2px; height: 18px; flex-shrink: 0; }
@@ -373,18 +366,36 @@
 
         <!-- ARTIGO ATUAL (visível só em single-post) -->
         <div class="cdpw-pane" id="cdpw-pane-artigo" style="display:none;flex-direction:column">
-          <div class="cdpw-art-header">
-            <div class="cdpw-art-label">Voce esta lendo</div>
-            <div class="cdpw-art-title" id="cdpw-art-title">Carregando...</div>
+          <div class="cdpw-fb-header">
+            <span class="cdpw-fb-title">Voce esta lendo</span>
           </div>
+
+          <!-- Player de áudio igual ao Flash Briefing -->
+          <div class="cdpw-audio" id="cdpw-art-audio-bar">
+            <button class="cdpw-play-btn" id="cdpw-art-play-btn" aria-label="Ouvir resumo">
+              <svg id="cdpw-art-icon-play" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+              <svg id="cdpw-art-icon-pause" viewBox="0 0 24 24" fill="white" style="display:none">
+                <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+              </svg>
+            </button>
+            <div class="cdpw-audio-info">
+              <div class="cdpw-audio-title" id="cdpw-art-audio-title">Ouvir resumo deste artigo</div>
+              <div class="cdpw-audio-sub" id="cdpw-art-audio-sub">resumo gerado por IA</div>
+            </div>
+            <div class="cdpw-waveform" id="cdpw-art-waveform">
+              <span></span><span></span><span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+
+          <!-- Título + resumo curto -->
           <div class="cdpw-art-body" id="cdpw-art-body">
+            <div class="cdpw-art-title" id="cdpw-art-title" style="margin-bottom:10px">Carregando...</div>
             <div class="cdpw-art-summary" id="cdpw-art-summary">
-              <div style="height:14px;border-radius:6px;margin-bottom:10px" class="cdpw-skeleton"></div>
-              <div style="height:14px;border-radius:6px;margin-bottom:10px;width:90%" class="cdpw-skeleton"></div>
-              <div style="height:14px;border-radius:6px;width:75%" class="cdpw-skeleton"></div>
+              <div style="height:12px;border-radius:6px;margin-bottom:8px" class="cdpw-skeleton"></div>
+              <div style="height:12px;border-radius:6px;margin-bottom:8px;width:88%" class="cdpw-skeleton"></div>
+              <div style="height:12px;border-radius:6px;width:70%" class="cdpw-skeleton"></div>
             </div>
             <div class="cdpw-art-ask" id="cdpw-art-ask" style="display:none">
-              <div class="cdpw-art-ask-label">Perguntas sobre este artigo</div>
               <div class="cdpw-art-chips" id="cdpw-art-chips"></div>
             </div>
           </div>
@@ -488,7 +499,14 @@
   const chatInput = document.getElementById('cdpw-input');
   const sendBtn   = document.getElementById('cdpw-send');
   const msgArea   = document.getElementById('cdpw-messages');
-  const chips     = document.querySelectorAll('.cdpw-chip');
+  const chips        = document.querySelectorAll('.cdpw-chip');
+  const artPlayBtn   = document.getElementById('cdpw-art-play-btn');
+  const artIconPlay  = document.getElementById('cdpw-art-icon-play');
+  const artIconPause = document.getElementById('cdpw-art-icon-pause');
+  const artWaveform  = document.getElementById('cdpw-art-waveform');
+  const artAudioSub  = document.getElementById('cdpw-art-audio-sub');
+  let   artSummaryText = '';   // texto completo para TTS do artigo
+  let   artIsPlaying   = false;
 
   // ─── SETUP INICIAL BASEADO EM PÁGINA ─────────────────────────────────────
   if (isSinglePost) {
@@ -600,7 +618,10 @@
       });
       const data = await res.json();
 
-      summaryEl.textContent = data.reply || 'Nao foi possivel gerar o resumo.';
+      artSummaryText = data.reply || '';
+      // Exibe só as 2 primeiras frases no bloco de texto
+      const sentences = artSummaryText.split(/(?<=[.!?])\s+/);
+      summaryEl.textContent = sentences.slice(0, 2).join(' ');
 
       // Chips de perguntas contextuais sobre o artigo
       const questions = [
@@ -836,6 +857,38 @@
 
     speechSynthesis.speak(utterance);
   });
+
+  // ─── PLAYER DO ARTIGO ─────────────────────────────────────────────────────
+  function setArtPlayState(playing) {
+    artIsPlaying = playing;
+    if (artWaveform)  artWaveform.classList.toggle('cdpw-playing', playing);
+    if (artIconPlay)  artIconPlay.style.display  = playing ? 'none'  : 'block';
+    if (artIconPause) artIconPause.style.display = playing ? 'block' : 'none';
+    if (artAudioSub)  artAudioSub.textContent    = playing ? 'Reproduzindo...' : 'resumo gerado por IA';
+  }
+
+  if (artPlayBtn) {
+    artPlayBtn.addEventListener('click', () => {
+      if (!artSummaryText) { if (artAudioSub) artAudioSub.textContent = 'Aguardando resumo...'; return; }
+      if (!('speechSynthesis' in window)) return;
+      if (artIsPlaying) { speechSynthesis.cancel(); setArtPlayState(false); return; }
+
+      const utt = new SpeechSynthesisUtterance(artSummaryText);
+      utt.lang = 'pt-BR'; utt.rate = 0.88; utt.pitch = 1.0;
+      const tryVoice = () => {
+        const v = speechSynthesis.getVoices();
+        const pt = v.find(x => x.lang === 'pt-BR') || v.find(x => x.lang.startsWith('pt'));
+        if (pt) utt.voice = pt;
+      };
+      if (speechSynthesis.getVoices().length > 0) tryVoice();
+      else speechSynthesis.addEventListener('voiceschanged', tryVoice, { once: true });
+
+      utt.onstart = () => setArtPlayState(true);
+      utt.onend   = () => setArtPlayState(false);
+      utt.onerror = () => setArtPlayState(false);
+      speechSynthesis.speak(utt);
+    });
+  }
 
   // ─── CHAT ─────────────────────────────────────────────────────────────────
   function addMessage(text, role) {
