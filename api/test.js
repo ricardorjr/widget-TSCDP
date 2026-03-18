@@ -1,25 +1,30 @@
-// api/test.js — Diagnóstico do Gemini (remover após resolver)
+// api/test.js — Diagnóstico da OpenAI
 // GET /api/test
 
 export default async function handler(req, res) {
   const diagnostics = {
-    geminiKeyPresent: !!process.env.GEMINI_API_KEY,
-    geminiKeyPrefix: process.env.GEMINI_API_KEY?.slice(0, 8) + '...',
+    openaiKeyPresent: !!process.env.OPENAI_API_KEY,
+    openaiKeyPrefix: process.env.OPENAI_API_KEY?.slice(0, 8) + '...',
     nodeVersion: process.version,
     timestamp: new Date().toISOString(),
   };
 
   try {
-    const { GoogleGenerativeAI } = await import('@google/generative-ai');
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-lite' });
-    const result = await model.generateContent('Responda apenas: OK');
-    const text = result.response.text();
+    const OpenAI = (await import('openai')).default;
+    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+    const completion = await client.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: 'Responda apenas: OK' }],
+      max_tokens: 5,
+    });
+
+    const text = completion.choices[0]?.message?.content;
 
     return res.status(200).json({
       ...diagnostics,
       status: 'SUCCESS',
-      geminiResponse: text,
+      openaiResponse: text,
     });
 
   } catch (err) {

@@ -2,7 +2,7 @@
 // POST /api/briefing
 // Body: { articles: Array<{title, link, summary, date}> }
 
-import { getModel, SYSTEM_PROMPT } from '../lib/gemini.js';
+import { openai, MODELS, SYSTEM_PROMPT } from '../lib/openai.js';
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -34,8 +34,13 @@ Regras:
 Artigos desta semana:
 ${articleList}`;
 
-    const result = await getModel().generateContent(prompt);
-    const aiSummary = result.response.text() || '';
+    const completion = await openai.chat.completions.create({
+      model: MODELS.chat,
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 500,
+      temperature: 0.8,
+    });
+    const aiSummary = completion.choices[0]?.message?.content || '';
 
     return res.status(200).json({ aiSummary, weekLabel: getWeekLabel() });
 

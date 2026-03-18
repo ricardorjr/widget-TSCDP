@@ -2,7 +2,7 @@
 // POST /api/chat
 // Body: { message, articles?, pageTitle?, pageUrl? }
 
-import { getModel, SYSTEM_PROMPT } from '../lib/gemini.js';
+import { openai, MODELS, SYSTEM_PROMPT } from '../lib/openai.js';
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -37,8 +37,13 @@ ${context}
 --- PERGUNTA DO USUÁRIO ---
 ${message.trim()}`;
 
-    const result = await getModel().generateContent(prompt);
-    const reply = result.response.text() || 'Desculpe, não consegui processar sua pergunta.';
+    const completion = await openai.chat.completions.create({
+      model: MODELS.chat,
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 600,
+      temperature: 0.7,
+    });
+    const reply = completion.choices[0]?.message?.content || 'Desculpe, não consegui processar sua pergunta.';
 
     return res.status(200).json({ reply });
 
