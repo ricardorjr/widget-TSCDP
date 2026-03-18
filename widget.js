@@ -124,17 +124,42 @@
     .cdpw-waveform.cdpw-playing span:nth-child(5){animation-delay:.15s}
     .cdpw-waveform.cdpw-playing span:nth-child(6){animation-delay:.25s}
     @keyframes cdpw-wave { from{transform:scaleY(.4)} to{transform:scaleY(1)} }
-    .cdpw-articles { padding: 8px 14px 14px; display: flex; flex-direction: column; gap: 10px; }
+    .cdpw-articles { padding: 10px 12px 16px; display: flex; flex-direction: column; gap: 10px; }
     .cdpw-card {
       background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
-      padding: 12px 14px; cursor: pointer; text-decoration: none; display: block;
-      transition: border-color .15s, box-shadow .15s, transform .15s;
+      padding: 12px 13px 12px 15px; cursor: pointer; text-decoration: none; display: block;
+      transition: border-color .2s, box-shadow .2s, transform .2s;
+      border-left: 3px solid ${ACCENT_COLOR};
+      position: relative; overflow: hidden;
     }
-    .cdpw-card:hover { border-color: #93c5fd; box-shadow: 0 3px 14px rgba(37,99,235,.12); transform: translateY(-2px); }
-    .cdpw-card-tag { font-size: 10px; font-weight: 700; color: ${ACCENT_COLOR}; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 5px; }
+    .cdpw-card:hover { border-color: #93c5fd; box-shadow: 0 4px 18px rgba(37,99,235,.13); transform: translateY(-2px); }
+    .cdpw-card[data-cat="destaque"] { border-left-color: #f97316; }
+    .cdpw-card[data-cat="analise"]  { border-left-color: ${ACCENT_COLOR}; }
+    .cdpw-card[data-cat="ia"]       { border-left-color: #7c3aed; }
+    .cdpw-card[data-cat="guia"]     { border-left-color: #0d9488; }
+    .cdpw-card[data-cat="entrevista"]{ border-left-color: #db2777; }
+    .cdpw-card-tag {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 9.5px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+      padding: 2px 7px; border-radius: 20px; margin-bottom: 6px;
+      background: #eff6ff; color: ${ACCENT_COLOR};
+    }
+    .cdpw-card[data-cat="destaque"] .cdpw-card-tag { background: #fff7ed; color: #c2410c; }
+    .cdpw-card[data-cat="ia"]       .cdpw-card-tag { background: #f5f3ff; color: #6d28d9; }
+    .cdpw-card[data-cat="guia"]     .cdpw-card-tag { background: #f0fdfa; color: #0f766e; }
+    .cdpw-card[data-cat="entrevista"] .cdpw-card-tag { background: #fdf2f8; color: #be185d; }
     .cdpw-card-title { font-size: 12.5px; font-weight: 700; color: #111827; line-height: 1.4; margin-bottom: 5px; }
     .cdpw-card-summary { font-size: 11.5px; color: #6b7280; line-height: 1.55; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-    .cdpw-card-meta { display: flex; justify-content: space-between; margin-top: 8px; font-size: 10px; color: #9ca3af; padding-top: 6px; border-top: 1px solid #f3f4f6; }
+    .cdpw-card-meta {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 9px; font-size: 10px; color: #9ca3af;
+      padding-top: 7px; border-top: 1px solid #f3f4f6;
+    }
+    .cdpw-card-read {
+      font-size: 10.5px; font-weight: 700; color: ${ACCENT_COLOR};
+      background: #eff6ff; padding: 2px 8px; border-radius: 20px;
+      white-space: nowrap;
+    }
     .cdpw-skeleton { background: linear-gradient(90deg, #f3f4f6 25%, #e9ecef 50%, #f3f4f6 75%); background-size: 200% 100%; animation: cdpw-shimmer 1.4s infinite; border-radius: 6px; }
     @keyframes cdpw-shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 
@@ -397,18 +422,26 @@
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    const TAGS = ['🔥 Destaque', '📊 Análise', '🤖 IA + CDP', '📘 Guia', '🎙️ Entrevista'];
-    container.innerHTML = articles.map((a, i) => `
-      <a class="cdpw-card" href="${a.link}" target="_blank" rel="noopener">
-        <div class="cdpw-card-tag">${TAGS[i % TAGS.length]}</div>
-        <div class="cdpw-card-title">${a.title}</div>
-        <div class="cdpw-card-summary">${a.summary}</div>
-        <div class="cdpw-card-meta">
-          <span>${formatDate(a.date)}</span>
-          <span style="color:#93c5fd">Ler →</span>
-        </div>
-      </a>
-    `).join('');
+    const TAGS = [
+      { label: '🔥 Destaque',    cat: 'destaque'   },
+      { label: '📊 Análise',     cat: 'analise'    },
+      { label: '🤖 IA + CDP',    cat: 'ia'         },
+      { label: '📘 Guia',        cat: 'guia'       },
+      { label: '🎙️ Entrevista',  cat: 'entrevista' },
+    ];
+    container.innerHTML = articles.map((a, i) => {
+      const tag = TAGS[i % TAGS.length];
+      return `
+        <a class="cdpw-card" href="${a.link}" target="_blank" rel="noopener" data-cat="${tag.cat}">
+          <div class="cdpw-card-tag">${tag.label}</div>
+          <div class="cdpw-card-title">${a.title}</div>
+          <div class="cdpw-card-summary">${a.summary}</div>
+          <div class="cdpw-card-meta">
+            <span>${formatDate(a.date)}</span>
+            <span class="cdpw-card-read">Ler →</span>
+          </div>
+        </a>`;
+    }).join('');
   }
 
   function formatDate(dateStr) {
