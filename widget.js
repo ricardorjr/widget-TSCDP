@@ -146,8 +146,8 @@
     .cdpw-tab.cdpw-active { color: ${ACCENT_COLOR} !important; border-bottom-color: ${ACCENT_COLOR} !important; }
 
     /* Panes */
-    .cdpw-body { flex: 1 !important; overflow: hidden !important; min-height: 0 !important; }
-    .cdpw-pane { display: none !important; height: 100% !important; flex-direction: column !important; overflow-y: auto !important; overflow-x: hidden !important; }
+    .cdpw-body { flex: 1 !important; overflow: hidden !important; min-height: 0 !important; position: relative !important; }
+    .cdpw-pane { display: none !important; position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; flex-direction: column !important; overflow-y: auto !important; overflow-x: hidden !important; }
     .cdpw-pane.cdpw-active { display: flex !important; }
     .cdpw-pane::-webkit-scrollbar { width: 4px !important; }
     .cdpw-pane::-webkit-scrollbar-thumb { background: #e2e8f0 !important; border-radius: 4px !important; }
@@ -744,10 +744,12 @@
     audioSub.textContent = `Artigo ${idx + 1} de ${briefingData.articles.length}`;
     updateNavButtons();
 
-    // Para o áudio atual e lê o título + resumo do artigo selecionado
+    // Para o áudio atual e inicia automaticamente o do artigo navegado
     if ('speechSynthesis' in window) {
       speechSynthesis.cancel();
       setPlayState(false);
+      // Pequeno delay para o cancel processar antes de falar
+      setTimeout(() => speakText(`${art.title}. ${art.summary || ''}`), 150);
     }
   }
 
@@ -806,6 +808,29 @@
       : 'resumo gerado por IA';
   }
 
+  // Fala um texto via Web Speech API e atualiza o estado do player do briefing
+  function speakText(text) {
+    if (!('speechSynthesis' in window) || !text) return;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang  = 'pt-BR';
+    utterance.rate  = 0.88;
+    utterance.pitch = 1.0;
+    const tryVoice = () => {
+      const voices = speechSynthesis.getVoices();
+      const ptVoice =
+        voices.find(v => v.lang === 'pt-BR' && v.name.toLowerCase().includes('female')) ||
+        voices.find(v => v.lang === 'pt-BR') ||
+        voices.find(v => v.lang.startsWith('pt'));
+      if (ptVoice) utterance.voice = ptVoice;
+    };
+    if (speechSynthesis.getVoices().length > 0) tryVoice();
+    else speechSynthesis.addEventListener('voiceschanged', tryVoice, { once: true });
+    utterance.onstart = () => { setPlayState(true); audioSub.textContent = 'Reproduzindo...'; };
+    utterance.onend   = () => setPlayState(false);
+    utterance.onerror = () => { setPlayState(false); audioSub.textContent = 'Erro ao reproduzir'; };
+    speechSynthesis.speak(utterance);
+  }
+
   playBtn.addEventListener('click', () => {
     if (!briefingData?.aiSummary) {
       audioSub.textContent = 'Aguardando carregamento...';
@@ -820,42 +845,12 @@
       setPlayState(false);
       return;
     }
-
-    // Decide o que ler: se um artigo estiver selecionado, lê título + resumo; senão, lê o resumo geral
-    let textToRead = briefingData.aiSummary;
-    if (currentArticleIdx > 0 && briefingData.articles[currentArticleIdx]) {
-      const art = briefingData.articles[currentArticleIdx];
-      textToRead = `${art.title}. ${art.summary}`;
-    }
-
-    const utterance = new SpeechSynthesisUtterance(textToRead);
-    utterance.lang  = 'pt-BR';
-    utterance.rate  = 0.88;   // levemente mais devagar para clareza
-    utterance.pitch = 1.0;
-
-    // Prefere voz feminina em pt-BR se disponível
-    const tryVoice = () => {
-      const voices = speechSynthesis.getVoices();
-      const ptVoice =
-        voices.find(v => v.lang === 'pt-BR' && v.name.toLowerCase().includes('female')) ||
-        voices.find(v => v.lang === 'pt-BR') ||
-        voices.find(v => v.lang.startsWith('pt'));
-      if (ptVoice) utterance.voice = ptVoice;
-    };
-    if (speechSynthesis.getVoices().length > 0) tryVoice();
-    else speechSynthesis.addEventListener('voiceschanged', tryVoice, { once: true });
-
-    utterance.onstart = () => {
-      setPlayState(true);
-      audioSub.textContent = 'Reproduzindo...';
-    };
-    utterance.onend   = () => setPlayState(false);
-    utterance.onerror = () => {
-      setPlayState(false);
-      audioSub.textContent = 'Erro ao reproduzir';
-    };
-
-    speechSynthesis.speak(utterance);
+    // Artigo selecionado → lê título + resumo; senão lê o resumo geral da semana
+    const art = briefingData.articles[currentArticleIdx];
+    const textToRead = art
+      ? `${art.title}. ${art.summary || ''}`
+      : briefingData.aiSummary;
+    speakText(textToRead);
   });
 
   // ─── PLAYER DO ARTIGO ─────────────────────────────────────────────────────
