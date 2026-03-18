@@ -22,14 +22,19 @@
   const ACCENT_COLOR  = '#2563eb';
   const DARK_COLOR    = '#1e3a5f';
 
+  // ─── DETECÇÃO DE PÁGINA ────────────────────────────────────────────────────
+  const isSinglePost = document.body.classList.contains('single-post') ||
+                       document.body.classList.contains('single');
+
   // ─── ESTADO ────────────────────────────────────────────────────────────────
-  let isOpen           = false;
-  let isPlaying        = false;
-  let briefingData     = null;
-  let relatedData      = null;
+  let isOpen            = false;
+  let isPlaying         = false;
+  let briefingData      = null;
+  let relatedData       = null;
   let isLoadingBriefing = false;
-  let isLoadingChat    = false;
-  let currentArticleIdx = 0; // índice do artigo sendo "lido" no briefing
+  let isLoadingChat     = false;
+  let isLoadingArticle  = false;
+  let currentArticleIdx = 0;
 
   // ─── ESTILOS ───────────────────────────────────────────────────────────────
   const style = document.createElement('style');
@@ -141,12 +146,12 @@
     .cdpw-nav-btn:disabled { opacity: .35; pointer-events: none; }
 
     /* Cards de artigo */
-    .cdpw-articles { padding: 0 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+    .cdpw-articles { padding: 4px 14px 18px; display: flex; flex-direction: column; gap: 12px; }
     .cdpw-card {
-      background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
-      padding: 13px 14px 13px 16px; cursor: pointer; text-decoration: none; display: block;
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
+      padding: 16px 18px 16px 19px; cursor: pointer; text-decoration: none; display: block;
       transition: border-color .2s, box-shadow .2s, transform .18s;
-      border-left: 3px solid ${ACCENT_COLOR};
+      border-left: 4px solid ${ACCENT_COLOR};
     }
     .cdpw-card:hover { border-color: #bfdbfe; box-shadow: 0 4px 18px rgba(37,99,235,.1); transform: translateY(-2px); }
     .cdpw-card[data-cat="destaque"]   { border-left-color: #f97316; }
@@ -156,19 +161,19 @@
     .cdpw-card[data-cat="entrevista"] { border-left-color: #db2777; }
     .cdpw-card-tag {
       display: inline-block; font-size: 9px; font-weight: 800; letter-spacing: .6px;
-      text-transform: uppercase; padding: 2px 7px; border-radius: 20px; margin-bottom: 7px;
+      text-transform: uppercase; padding: 3px 9px; border-radius: 20px; margin-bottom: 9px;
       background: #eff6ff; color: ${ACCENT_COLOR};
     }
     .cdpw-card[data-cat="destaque"]   .cdpw-card-tag { background: #fff7ed; color: #c2410c; }
     .cdpw-card[data-cat="ia"]         .cdpw-card-tag { background: #f5f3ff; color: #6d28d9; }
     .cdpw-card[data-cat="guia"]       .cdpw-card-tag { background: #f0fdfa; color: #0f766e; }
     .cdpw-card[data-cat="entrevista"] .cdpw-card-tag { background: #fdf2f8; color: #be185d; }
-    .cdpw-card-title   { font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.4; margin-bottom: 6px; }
-    .cdpw-card-summary { font-size: 11.5px; color: #64748b; line-height: 1.55; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .cdpw-card-title   { font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.45; margin-bottom: 8px; }
+    .cdpw-card-summary { font-size: 12px; color: #64748b; line-height: 1.6; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
     .cdpw-card-meta {
       display: flex; justify-content: space-between; align-items: center;
-      margin-top: 10px; padding-top: 8px; border-top: 1px solid #f1f5f9;
-      font-size: 10px; color: #94a3b8;
+      margin-top: 12px; padding-top: 10px; border-top: 1px solid #f1f5f9;
+      font-size: 10.5px; color: #94a3b8;
     }
     .cdpw-card-read {
       font-size: 10.5px; font-weight: 700; color: ${ACCENT_COLOR};
@@ -245,6 +250,24 @@
     .cdpw-rel-title { font-size: 11px; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: .6px; }
     .cdpw-rel-sub { font-size: 11px; color: #64748b; margin-top: 3px; }
 
+    /* Artigo atual */
+    .cdpw-art-header { padding: 16px 16px 10px; border-bottom: 1px solid #f1f5f9; }
+    .cdpw-art-label { font-size: 9px; font-weight: 800; letter-spacing: .7px; text-transform: uppercase; color: ${ACCENT_COLOR}; margin-bottom: 6px; }
+    .cdpw-art-title { font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.4; }
+    .cdpw-art-body { flex: 1; overflow-y: auto; padding: 14px 16px 16px; }
+    .cdpw-art-body::-webkit-scrollbar { width: 4px; }
+    .cdpw-art-body::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+    .cdpw-art-summary {
+      font-size: 13px; color: #374151; line-height: 1.65;
+      background: #f8fafc; border-radius: 12px; padding: 14px 16px;
+      border-left: 3px solid ${ACCENT_COLOR};
+    }
+    .cdpw-art-ask {
+      margin-top: 14px; padding-top: 14px; border-top: 1px solid #f1f5f9;
+    }
+    .cdpw-art-ask-label { font-size: 10.5px; font-weight: 700; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .4px; }
+    .cdpw-art-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+
     /* Waveform */
     .cdpw-waveform { display: flex; align-items: center; gap: 2px; height: 18px; flex-shrink: 0; }
     .cdpw-waveform span { width: 3px; border-radius: 2px; background: #6366f1; opacity: .45; }
@@ -296,15 +319,34 @@
       </div>
 
       <div class="cdpw-tabs">
-        <button class="cdpw-tab cdpw-active" data-tab="briefing">Esta semana</button>
+        <button class="cdpw-tab cdpw-active" data-tab="briefing" id="cdpw-tab-briefing">Esta semana</button>
         <button class="cdpw-tab" data-tab="chat">Perguntar</button>
         <button class="cdpw-tab" data-tab="relacionados">Ver mais</button>
       </div>
 
       <div class="cdpw-body">
 
+        <!-- ARTIGO ATUAL (visível só em single-post) -->
+        <div class="cdpw-pane" id="cdpw-pane-artigo" style="display:none;flex-direction:column">
+          <div class="cdpw-art-header">
+            <div class="cdpw-art-label">Voce esta lendo</div>
+            <div class="cdpw-art-title" id="cdpw-art-title">Carregando...</div>
+          </div>
+          <div class="cdpw-art-body" id="cdpw-art-body">
+            <div class="cdpw-art-summary" id="cdpw-art-summary">
+              <div style="height:14px;border-radius:6px;margin-bottom:10px" class="cdpw-skeleton"></div>
+              <div style="height:14px;border-radius:6px;margin-bottom:10px;width:90%" class="cdpw-skeleton"></div>
+              <div style="height:14px;border-radius:6px;width:75%" class="cdpw-skeleton"></div>
+            </div>
+            <div class="cdpw-art-ask" id="cdpw-art-ask" style="display:none">
+              <div class="cdpw-art-ask-label">Perguntas sobre este artigo</div>
+              <div class="cdpw-art-chips" id="cdpw-art-chips"></div>
+            </div>
+          </div>
+        </div>
+
         <!-- BRIEFING -->
-        <div class="cdpw-pane cdpw-active" id="cdpw-pane-briefing">
+        <div class="cdpw-pane" id="cdpw-pane-briefing">
           <div class="cdpw-fb-header">
             <span class="cdpw-fb-title">Esta semana em CDP</span>
             <span class="cdpw-fb-date" id="cdpw-week-label">Carregando...</span>
@@ -403,11 +445,35 @@
   const msgArea   = document.getElementById('cdpw-messages');
   const chips     = document.querySelectorAll('.cdpw-chip');
 
+  // ─── SETUP INICIAL BASEADO EM PÁGINA ─────────────────────────────────────
+  if (isSinglePost) {
+    // Troca a tab 1 para "Este artigo"
+    const tabBriefing = document.getElementById('cdpw-tab-briefing');
+    if (tabBriefing) {
+      tabBriefing.textContent = 'Este artigo';
+      tabBriefing.dataset.tab = 'artigo';
+    }
+    // Ativa o painel correto
+    document.getElementById('cdpw-pane-artigo').classList.add('cdpw-active');
+    document.getElementById('cdpw-pane-artigo').style.display = '';
+    document.getElementById('cdpw-pane-briefing').classList.remove('cdpw-active');
+
+    // Título da matéria
+    const h1 = document.querySelector('h1.entry-title, h1.post-title, h1');
+    const artTitleEl = document.getElementById('cdpw-art-title');
+    if (h1 && artTitleEl) artTitleEl.textContent = h1.textContent.trim();
+  }
+
   // ─── TOGGLE PANEL ─────────────────────────────────────────────────────────
   function toggle() {
     isOpen = !isOpen;
     panel.classList.toggle('cdpw-open', isOpen);
-    if (isOpen && !briefingData && !isLoadingBriefing) loadBriefing();
+    if (isOpen) {
+      if (isSinglePost && !isLoadingArticle) loadArticleSummary();
+      else if (!isSinglePost && !briefingData && !isLoadingBriefing) loadBriefing();
+      // "Ver mais" carrega os artigos do portal em ambos os casos
+      if (!relatedData && !isLoadingBriefing) loadRelated();
+    }
   }
   btn.addEventListener('click', toggle);
   closeBtn.addEventListener('click', toggle);
@@ -420,6 +486,90 @@
       document.getElementById('cdpw-pane-' + tab.dataset.tab).classList.add('cdpw-active');
     });
   });
+
+  // ─── ARTIGO ATUAL (single-post) ───────────────────────────────────────────
+  async function loadArticleSummary() {
+    if (isLoadingArticle) return;
+    isLoadingArticle = true;
+
+    const summaryEl = document.getElementById('cdpw-art-summary');
+    const askEl     = document.getElementById('cdpw-art-ask');
+    const chipsEl   = document.getElementById('cdpw-art-chips');
+
+    try {
+      // Extrai texto do artigo do DOM
+      const contentEl = document.querySelector('.entry-content, .post-content, .article-content, article');
+      const articleText = contentEl
+        ? contentEl.innerText.replace(/\s+/g, ' ').trim().slice(0, 3000)
+        : '';
+
+      const title = document.querySelector('h1.entry-title, h1.post-title, h1')?.textContent.trim() || document.title;
+
+      if (!articleText) {
+        summaryEl.textContent = 'Nao foi possivel ler o conteudo desta pagina.';
+        return;
+      }
+
+      const res = await fetch(`${API_BASE_URL}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `Faca um resumo claro e objetivo deste artigo em 3 paragrafos curtos. Destaque os pontos principais para o leitor.`,
+          articles: [{ title, link: window.location.href, summary: articleText }],
+          pageTitle: title,
+          pageUrl: window.location.href,
+        })
+      });
+      const data = await res.json();
+
+      summaryEl.textContent = data.reply || 'Nao foi possivel gerar o resumo.';
+
+      // Chips de perguntas contextuais sobre o artigo
+      const questions = [
+        'Quais os pontos principais desta materia?',
+        'Tem outros artigos relacionados no portal?',
+        'Me explica de forma mais simples',
+      ];
+      chipsEl.innerHTML = questions.map(q =>
+        `<button class="cdpw-chip cdpw-art-chip" data-q="${q}">${q}</button>`
+      ).join('');
+
+      chipsEl.querySelectorAll('.cdpw-art-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          chip.disabled = true;
+          sendMessage(chip.dataset.q);
+        });
+      });
+
+      askEl.style.display = 'block';
+
+    } catch (err) {
+      console.error('[Radar CDP] Erro ao resumir artigo:', err);
+      summaryEl.textContent = 'Nao foi possivel gerar o resumo. Tente usar o chat abaixo.';
+    } finally {
+      isLoadingArticle = false;
+    }
+  }
+
+  // ─── RELACIONADOS (Ver mais — busca artigos do portal) ────────────────────
+  async function loadRelated() {
+    try {
+      const wpRes = await fetch('/wp-json/wp/v2/posts?per_page=5&_embed=true', {
+        headers: { 'Accept': 'application/json' }
+      });
+      if (!wpRes.ok) return;
+      const posts = await wpRes.json();
+      relatedData = posts.map(p => ({
+        title:   decodeEntities(p.title?.rendered || ''),
+        link:    p.link || '',
+        date:    p.date || '',
+        summary: stripTags(p.excerpt?.rendered || '').slice(0, 300),
+      }));
+      renderArticles(relatedData, 'cdpw-related-articles');
+    } catch (err) {
+      console.error('[Radar CDP] Erro ao carregar relacionados:', err);
+    }
+  }
 
   // ─── BRIEFING ─────────────────────────────────────────────────────────────
   async function loadBriefing() {
@@ -461,7 +611,9 @@
       if (weekEl) weekEl.textContent = briefingData.weekLabel || '';
 
       renderArticles(briefingArticles, 'cdpw-articles');
-      renderArticles(relatedData.length ? relatedData : briefingArticles.slice().reverse(), 'cdpw-related-articles');
+      // Ver mais: artigos 6-10 ou, se não houver, inverte os do briefing
+      const forRelated = relatedData?.length ? relatedData : briefingArticles.slice().reverse();
+      renderArticles(forRelated, 'cdpw-related-articles');
 
       // Ativa botões de navegação
       updateNavButtons();
