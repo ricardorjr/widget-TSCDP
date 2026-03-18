@@ -124,17 +124,17 @@
     .cdpw-waveform.cdpw-playing span:nth-child(5){animation-delay:.15s}
     .cdpw-waveform.cdpw-playing span:nth-child(6){animation-delay:.25s}
     @keyframes cdpw-wave { from{transform:scaleY(.4)} to{transform:scaleY(1)} }
-    .cdpw-articles { padding: 0 14px 10px; display: flex; flex-direction: column; gap: 7px; }
+    .cdpw-articles { padding: 8px 14px 14px; display: flex; flex-direction: column; gap: 10px; }
     .cdpw-card {
-      background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 9px;
-      padding: 9px 11px; cursor: pointer; text-decoration: none; display: block;
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+      padding: 12px 14px; cursor: pointer; text-decoration: none; display: block;
       transition: border-color .15s, box-shadow .15s, transform .15s;
     }
-    .cdpw-card:hover { border-color: #93c5fd; box-shadow: 0 2px 10px rgba(37,99,235,.1); transform: translateY(-1px); }
-    .cdpw-card-tag { font-size: 10px; font-weight: 700; color: ${ACCENT_COLOR}; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 3px; }
-    .cdpw-card-title { font-size: 12px; font-weight: 600; color: #111827; line-height: 1.35; margin-bottom: 3px; }
-    .cdpw-card-summary { font-size: 11px; color: #6b7280; line-height: 1.45; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-    .cdpw-card-meta { display: flex; justify-content: space-between; margin-top: 5px; font-size: 10px; color: #9ca3af; }
+    .cdpw-card:hover { border-color: #93c5fd; box-shadow: 0 3px 14px rgba(37,99,235,.12); transform: translateY(-2px); }
+    .cdpw-card-tag { font-size: 10px; font-weight: 700; color: ${ACCENT_COLOR}; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 5px; }
+    .cdpw-card-title { font-size: 12.5px; font-weight: 700; color: #111827; line-height: 1.4; margin-bottom: 5px; }
+    .cdpw-card-summary { font-size: 11.5px; color: #6b7280; line-height: 1.55; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .cdpw-card-meta { display: flex; justify-content: space-between; margin-top: 8px; font-size: 10px; color: #9ca3af; padding-top: 6px; border-top: 1px solid #f3f4f6; }
     .cdpw-skeleton { background: linear-gradient(90deg, #f3f4f6 25%, #e9ecef 50%, #f3f4f6 75%); background-size: 200% 100%; animation: cdpw-shimmer 1.4s infinite; border-radius: 6px; }
     @keyframes cdpw-shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 
@@ -261,15 +261,15 @@
             <div class="cdpw-msg cdpw-bot">
               <div class="cdpw-bavatar">🤖</div>
               <div class="cdpw-bubble">
-                Olá! Posso responder sobre o artigo que você está lendo, indicar conteúdos do portal ou tirar dúvidas sobre CDP. Por onde começamos?
+                Olá! Sou o assistente do <strong>Tudo Sobre CDP</strong> 👋<br><br>Posso explicar os artigos do portal, resumir conteúdos, indicar leituras relacionadas ou tirar dúvidas sobre CDP. O que você quer explorar?
               </div>
             </div>
           </div>
           <div class="cdpw-chips" id="cdpw-chips">
-            <button class="cdpw-chip" data-q="O que é CDP?">O que é CDP?</button>
-            <button class="cdpw-chip" data-q="Resumo do artigo atual">📄 Resumir artigo</button>
-            <button class="cdpw-chip" data-q="Melhores CDPs do mercado">Top CDPs</button>
-            <button class="cdpw-chip" data-q="Como implementar um CDP?">Como implementar?</button>
+            <button class="cdpw-chip" data-q="Quais os artigos mais recentes do portal?">📰 Últimas notícias</button>
+            <button class="cdpw-chip" data-q="Me explica o artigo que estou lendo">📄 Explicar artigo</button>
+            <button class="cdpw-chip" data-q="O que é CDP? Explique de forma simples">O que é CDP?</button>
+            <button class="cdpw-chip" data-q="Quais temas o portal aborda?">🗂️ Temas do portal</button>
           </div>
           <div class="cdpw-input-area">
             <input class="cdpw-input" id="cdpw-input" type="text" placeholder="Pergunte sobre CDP..." maxlength="400">
